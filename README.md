@@ -215,7 +215,7 @@ This project is created for educational and internship purposes.
 
 ## 👨‍💻 Author
 
-Created as part of an internship task to demonstrate full-stack development skills.
+Created as part of the internship task to demonstrate full-stack development skills.
 
 ---
 
