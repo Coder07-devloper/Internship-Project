@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intern Portal - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Intern Portal</span>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link active">Dashboard</a>
+                <a href="/leaderboard" class="nav-link">Leaderboard</a>
+                <a href="#" class="nav-link">Rewards</a>
+                <a href="/data-management" class="nav-link">Data Management</a>
+            </div>
+            <div class="nav-user">
+                <div class="user-info">
+                    <span id="userName">Loading...</span>
+                    <small id="userEmail">loading@example.com</small>
+                </div>
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Stats Cards -->
+        <section class="stats-section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="totalInterns">0</h3>
+                        <p>Total Interns</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-rupee-sign"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="totalDonations">₹0</h3>
+                        <p>Total Donations</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="avgDonations">₹0</h3>
+                        <p>Average per Intern</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="topPerformer">-</h3>
+                        <p>Top Performer</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-grid">
+            <!-- Leaderboard Section -->
+            <section class="leaderboard-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-medal"></i> Team Leaderboard</h2>
+                    <div class="section-actions">
+                        <button class="refresh-btn" onclick="loadInterns()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="leaderboard-container">
+                    <div id="leaderboardList" class="leaderboard-list">
+                        <!-- Interns will be loaded here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Rewards Section -->
+            <section class="rewards-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-gift"></i> Rewards & Unlockables</h2>
+                </div>
+                <div class="rewards-container">
+                    <div id="rewardsList" class="rewards-grid">
+                        <!-- Rewards will be loaded here -->
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading dashboard...</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let internsData = [];
+        let rewardsData = [];
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadDashboard();
+        });
+
+        // Check authentication
+        function checkAuth() {
+            const user = localStorage.getItem('currentUser');
+            if (!user) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            currentUser = JSON.parse(user);
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userEmail').textContent = currentUser.email;
+        }
+
+        // Load dashboard data
+        async function loadDashboard() {
+            showLoading(true);
+            
+            try {
+                await Promise.all([
+                    loadInterns(),
+                    loadRewards(),
+                    loadStats()
+                ]);
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showError('Failed to load dashboard data');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load interns data
+        async function loadInterns() {
+            try {
+                const response = await fetch('/api/interns');
+                const data = await response.json();
+                
+                if (data.success) {
+                    internsData = data.data;
+                    renderLeaderboard();
+                }
+            } catch (error) {
+                console.error('Error loading interns:', error);
+                // Fallback to static data
+                internsData = [
+                    { name: "Siya Shrivastava", referralCode: "siya2025", donationsRaised: 18000, avatar: "👩‍💻" },
+                    { name: "Madhu Kumari", referralCode: "madhu2025", donationsRaised: 12000, avatar: "👩‍💼" },
+                    { name: "Priti Kumari", referralCode: "priti2025", donationsRaised: 9500, avatar: "🎨" },
+                    { name: "Aishvariya Shrivastava", referralCode: "aishvariya2025", donationsRaised: 7000, avatar: "📊" },
+                    { name: "Shakshi Patel", referralCode: "shakshi2025", donationsRaised: 5000, avatar: "📱" }
+                ];
+                renderLeaderboard();
+            }
+        }
+
+        // Load rewards data
+        async function loadRewards() {
+            try {
+                const response = await fetch('/api/rewards');
+                const data = await response.json();
+                
+                if (data.success) {
+                    rewardsData = data.data;
+                    renderRewards();
+                }
+            } catch (error) {
+                console.error('Error loading rewards:', error);
+                // Fallback to static data
+                rewardsData = [
+                    { name: "Early Access", description: "Get exclusive access to beta features", icon: "🚀", unlocked: true },
+                    { name: "Premium Resources", description: "Access to premium courses", icon: "📚", unlocked: true },
+                    { name: "Mentorship", description: "One-on-one session", icon: "👨‍🏫", unlocked: false },
+                    { name: "Conference Pass", description: "Free tech conference pass", icon: "🎫", unlocked: false },
+                    { name: "Swag Kit", description: "Exclusive merchandise", icon: "🎁", unlocked: false }
+                ];
+                renderRewards();
+            }
+        }
+
+        // Load dashboard stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/dashboard');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.data;
+                    document.getElementById('totalInterns').textContent = stats.totalInterns;
+                    document.getElementById('totalDonations').textContent = `₹${stats.totalDonations.toLocaleString()}`;
+                    document.getElementById('avgDonations').textContent = `₹${stats.avgDonations.toLocaleString()}`;
+                    document.getElementById('topPerformer').textContent = stats.topPerformer.name.split(' ')[0];
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                // Calculate from interns data
+                const totalDonations = internsData.reduce((sum, intern) => sum + intern.donationsRaised, 0);
+                const avgDonations = Math.round(totalDonations / internsData.length);
+                const topPerformer = internsData.sort((a, b) => b.donationsRaised - a.donationsRaised)[0];
+                
+                document.getElementById('totalInterns').textContent = internsData.length;
+                document.getElementById('totalDonations').textContent = `₹${totalDonations.toLocaleString()}`;
+                document.getElementById('avgDonations').textContent = `₹${avgDonations.toLocaleString()}`;
+                document.getElementById('topPerformer').textContent = topPerformer.name.split(' ')[0];
+            }
+        }
+
+        // Render leaderboard
+        function renderLeaderboard() {
+            const container = document.getElementById('leaderboardList');
+            const sortedInterns = [...internsData].sort((a, b) => b.donationsRaised - a.donationsRaised);
+            
+            container.innerHTML = sortedInterns.map((intern, index) => `
+                <div class="leaderboard-item ${index === 0 ? 'top-performer' : ''}">
+                    <div class="rank-badge">
+                        ${index === 0 ? '<i class="fas fa-crown"></i>' : index + 1}
+                    </div>
+                    <div class="intern-avatar">
+                        <span>${intern.avatar}</span>
+                    </div>
+                    <div class="intern-info">
+                        <h4>${intern.name}</h4>
+                        <p class="referral-code">${intern.referralCode}</p>
+                    </div>
+                    <div class="intern-stats">
+                        <div class="donation-amount">
+                            ₹${intern.donationsRaised.toLocaleString()}
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${(intern.donationsRaised / sortedInterns[0].donationsRaised) * 100}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render rewards
+        function renderRewards() {
+            const container = document.getElementById('rewardsList');
+            
+            container.innerHTML = rewardsData.map(reward => `
+                <div class="reward-card ${reward.unlocked ? 'unlocked' : 'locked'}">
+                    <div class="reward-icon">
+                        <span>${reward.icon}</span>
+                        ${reward.unlocked ? '<i class="fas fa-check-circle unlock-badge"></i>' : '<i class="fas fa-lock lock-badge"></i>'}
+                    </div>
+                    <div class="reward-content">
+                        <h4>${reward.name}</h4>
+                        <p>${reward.description}</p>
+                    </div>
+                    <div class="reward-status">
+                        ${reward.unlocked ? '<span class="status-unlocked">Unlocked</span>' : '<span class="status-locked">Locked</span>'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Utility functions
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+        }
+
+        function showError(message) {
+            // Create a simple error notification
+            const notification = document.createElement('div');
+            notification.className = 'error-notification';
+            notification.innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = '/login';
+        }
+
+        // Add some interactive features
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('nav-link')) {
+                // Only prevent default for non-navigation links
+                if (e.target.getAttribute('href') === '#') {
+                    e.preventDefault();
+                }
+                document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+                e.target.classList.add('active');
+            }
+        });
+    </script>
+</body>
+</html>

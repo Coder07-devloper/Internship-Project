@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intern Portal - Data Management</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Intern Portal</span>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="/leaderboard" class="nav-link">Leaderboard</a>
+                <a href="#" class="nav-link">Rewards</a>
+                <a href="/data-management" class="nav-link active">Data Management</a>
+            </div>
+            <div class="nav-user">
+                <div class="user-info">
+                    <span id="userName">Loading...</span>
+                    <small id="userEmail">loading@example.com</small>
+                </div>
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Data Management Header -->
+        <section class="data-header">
+            <div class="header-content">
+                <h1><i class="fas fa-database"></i> Data Management</h1>
+                <p>Manage your intern portal data with Firebase and JSON storage</p>
+            </div>
+        </section>
+
+        <!-- Firebase Status -->
+        <section class="firebase-status-section">
+            <div class="status-card">
+                <div class="status-header">
+                    <h3><i class="fas fa-fire"></i> Firebase Connection</h3>
+                    <div class="status-indicator" id="firebaseStatus">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Checking...</span>
+                    </div>
+                </div>
+                <div class="status-details">
+                    <p id="firebaseDetails">Initializing Firebase connection...</p>
+                    <button class="connect-btn" onclick="initializeFirebase()" id="connectBtn">
+                        <i class="fas fa-plug"></i> Connect to Firebase
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Operations -->
+        <div class="data-grid">
+            <!-- Export Data -->
+            <section class="data-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-download"></i> Export Data</h2>
+                </div>
+                <div class="data-content">
+                    <p>Export all intern and rewards data to JSON format</p>
+                    <div class="export-options">
+                        <button class="export-btn" onclick="exportData()">
+                            <i class="fas fa-file-export"></i> Export to JSON
+                        </button>
+                        <button class="export-btn" onclick="exportToFirebase()">
+                            <i class="fas fa-cloud-upload-alt"></i> Upload to Firebase
+                        </button>
+                    </div>
+                    <div class="export-info">
+                        <small>Data will be exported as: <code>intern-portal-data-YYYY-MM-DD.json</code></small>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Import Data -->
+            <section class="data-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-upload"></i> Import Data</h2>
+                </div>
+                <div class="data-content">
+                    <p>Import data from JSON file or Firebase</p>
+                    <div class="import-options">
+                        <input type="file" id="importFile" accept=".json" style="display: none;">
+                        <button class="import-btn" onclick="document.getElementById('importFile').click()">
+                            <i class="fas fa-file-import"></i> Import from JSON
+                        </button>
+                        <button class="import-btn" onclick="importFromFirebase()">
+                            <i class="fas fa-cloud-download-alt"></i> Download from Firebase
+                        </button>
+                    </div>
+                    <div class="import-info">
+                        <small>Supported format: JSON file with interns and rewards arrays</small>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Statistics -->
+            <section class="data-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-bar"></i> Data Statistics</h2>
+                </div>
+                <div class="data-content">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalInterns">0</span>
+                            <span class="stat-label">Total Interns</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalRewards">0</span>
+                            <span class="stat-label">Total Rewards</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalDonations">₹0</span>
+                            <span class="stat-label">Total Donations</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="lastUpdated">-</span>
+                            <span class="stat-label">Last Updated</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Backup -->
+            <section class="data-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-shield-alt"></i> Data Backup</h2>
+                </div>
+                <div class="data-content">
+                    <p>Create backups and manage data integrity</p>
+                    <div class="backup-options">
+                        <button class="backup-btn" onclick="createBackup()">
+                            <i class="fas fa-save"></i> Create Backup
+                        </button>
+                        <button class="backup-btn" onclick="restoreBackup()">
+                            <i class="fas fa-undo"></i> Restore Backup
+                        </button>
+                        <button class="backup-btn danger" onclick="clearAllData()">
+                            <i class="fas fa-trash"></i> Clear All Data
+                        </button>
+                    </div>
+                    <div class="backup-info">
+                        <small>Backups are stored locally in your browser</small>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Recent Activity -->
+        <section class="activity-section">
+            <div class="section-header">
+                <h2><i class="fas fa-history"></i> Recent Activity</h2>
+            </div>
+            <div class="activity-list" id="activityList">
+                <div class="activity-item">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Data management system initialized</span>
+                    <small>Just now</small>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Processing data...</p>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let activityLog = [];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            initializePage();
+            setupEventListeners();
+            
+            // Fallback: hide loading screen after 5 seconds if something goes wrong
+            setTimeout(() => {
+                showLoading(false);
+            }, 5000);
+        });
+
+        // Check authentication
+        function checkAuth() {
+            const user = localStorage.getItem('currentUser');
+            if (!user) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            currentUser = JSON.parse(user);
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userEmail').textContent = currentUser.email;
+        }
+
+        // Initialize page
+        async function initializePage() {
+            try {
+                updateDataStats();
+                checkFirebaseStatus();
+                addActivity('Data management page loaded');
+            } catch (error) {
+                console.error('Error initializing page:', error);
+                addActivity('Page initialization failed');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('importFile').addEventListener('change', handleFileImport);
+        }
+
+        // Check Firebase status
+        async function checkFirebaseStatus() {
+            try {
+                const statusIndicator = document.getElementById('firebaseStatus');
+                const statusText = statusIndicator.querySelector('.status-text');
+                const statusDot = statusIndicator.querySelector('.status-dot');
+                const details = document.getElementById('firebaseDetails');
+                const connectBtn = document.getElementById('connectBtn');
+
+                if (window.firebaseService && window.firebaseService.isConnected) {
+                    statusText.textContent = 'Connected';
+                    statusDot.className = 'status-dot connected';
+                    details.textContent = 'Firebase is connected and ready for data operations';
+                    connectBtn.style.display = 'none';
+                } else {
+                    statusText.textContent = 'Not Connected';
+                    statusDot.className = 'status-dot disconnected';
+                    details.textContent = 'Firebase is not connected. Data will be stored locally.';
+                    connectBtn.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error checking Firebase status:', error);
+                const statusIndicator = document.getElementById('firebaseStatus');
+                const statusText = statusIndicator.querySelector('.status-text');
+                const statusDot = statusIndicator.querySelector('.status-dot');
+                const details = document.getElementById('firebaseDetails');
+                const connectBtn = document.getElementById('connectBtn');
+                
+                statusText.textContent = 'Error';
+                statusDot.className = 'status-dot error';
+                details.textContent = 'Error checking Firebase status. Using local storage.';
+                connectBtn.style.display = 'block';
+            }
+        }
+
+        // Initialize Firebase
+        async function initializeFirebase() {
+            showLoading(true);
+            try {
+                await window.firebaseService.initFirebase();
+                checkFirebaseStatus();
+                addActivity('Firebase connection attempted');
+            } catch (error) {
+                console.error('Firebase initialization failed:', error);
+                addActivity('Firebase connection failed');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Export data
+        function exportData() {
+            try {
+                window.firebaseService.exportData();
+                addActivity('Data exported to JSON file');
+                showNotification('Data exported successfully!', 'success');
+            } catch (error) {
+                console.error('Export failed:', error);
+                addActivity('Data export failed');
+                showNotification('Export failed!', 'error');
+            }
+        }
+
+        // Export to Firebase
+        async function exportToFirebase() {
+            showLoading(true);
+            try {
+                const interns = window.firebaseService.getInternsFromStorage();
+                const rewards = JSON.parse(localStorage.getItem('rewardsData') || '[]');
+                
+                for (const intern of interns) {
+                    await window.firebaseService.saveIntern(intern);
+                }
+                
+                await window.firebaseService.saveRewards(rewards);
+                
+                addActivity('Data uploaded to Firebase');
+                showNotification('Data uploaded to Firebase successfully!', 'success');
+            } catch (error) {
+                console.error('Firebase upload failed:', error);
+                addActivity('Firebase upload failed');
+                showNotification('Upload to Firebase failed!', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Handle file import
+        async function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            showLoading(true);
+            try {
+                const result = await window.firebaseService.importData(file);
+                if (result.success) {
+                    updateDataStats();
+                    addActivity('Data imported from JSON file');
+                    showNotification('Data imported successfully!', 'success');
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error('Import failed:', error);
+                addActivity('Data import failed');
+                showNotification('Import failed: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+                event.target.value = ''; // Reset file input
+            }
+        }
+
+        // Import from Firebase
+        async function importFromFirebase() {
+            showLoading(true);
+            try {
+                const internsResult = await window.firebaseService.getInterns();
+                const rewardsResult = await window.firebaseService.getRewards();
+                
+                if (internsResult.success && rewardsResult.success) {
+                    localStorage.setItem('internsData', JSON.stringify(internsResult.data));
+                    localStorage.setItem('rewardsData', JSON.stringify(rewardsResult.data));
+                    
+                    updateDataStats();
+                    addActivity('Data downloaded from Firebase');
+                    showNotification('Data downloaded from Firebase successfully!', 'success');
+                } else {
+                    throw new Error('Failed to download data from Firebase');
+                }
+            } catch (error) {
+                console.error('Firebase download failed:', error);
+                addActivity('Firebase download failed');
+                showNotification('Download from Firebase failed!', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Create backup
+        function createBackup() {
+            try {
+                const backup = {
+                    interns: window.firebaseService.getInternsFromStorage(),
+                    rewards: JSON.parse(localStorage.getItem('rewardsData') || '[]'),
+                    timestamp: new Date().toISOString(),
+                    version: '1.0'
+                };
+                
+                localStorage.setItem('internPortalBackup', JSON.stringify(backup));
+                addActivity('Backup created');
+                showNotification('Backup created successfully!', 'success');
+            } catch (error) {
+                console.error('Backup creation failed:', error);
+                addActivity('Backup creation failed');
+                showNotification('Backup creation failed!', 'error');
+            }
+        }
+
+        // Restore backup
+        function restoreBackup() {
+            try {
+                const backup = localStorage.getItem('internPortalBackup');
+                if (!backup) {
+                    showNotification('No backup found!', 'error');
+                    return;
+                }
+                
+                const backupData = JSON.parse(backup);
+                localStorage.setItem('internsData', JSON.stringify(backupData.interns));
+                localStorage.setItem('rewardsData', JSON.stringify(backupData.rewards));
+                
+                updateDataStats();
+                addActivity('Backup restored');
+                showNotification('Backup restored successfully!', 'success');
+            } catch (error) {
+                console.error('Backup restoration failed:', error);
+                addActivity('Backup restoration failed');
+                showNotification('Backup restoration failed!', 'error');
+            }
+        }
+
+        // Clear all data
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+                try {
+                    localStorage.removeItem('internsData');
+                    localStorage.removeItem('rewardsData');
+                    localStorage.removeItem('internPortalBackup');
+                    
+                    updateDataStats();
+                    addActivity('All data cleared');
+                    showNotification('All data cleared successfully!', 'success');
+                } catch (error) {
+                    console.error('Data clearing failed:', error);
+                    addActivity('Data clearing failed');
+                    showNotification('Data clearing failed!', 'error');
+                }
+            }
+        }
+
+        // Update data statistics
+        function updateDataStats() {
+            try {
+                const interns = window.firebaseService ? window.firebaseService.getInternsFromStorage() : [];
+                const rewards = JSON.parse(localStorage.getItem('rewardsData') || '[]');
+                const totalDonations = interns.reduce((sum, intern) => sum + (intern.donationsRaised || 0), 0);
+                
+                document.getElementById('totalInterns').textContent = interns.length;
+                document.getElementById('totalRewards').textContent = rewards.length;
+                document.getElementById('totalDonations').textContent = `₹${totalDonations.toLocaleString()}`;
+                
+                const lastUpdated = new Date().toLocaleString();
+                document.getElementById('lastUpdated').textContent = lastUpdated;
+            } catch (error) {
+                console.error('Error updating data stats:', error);
+                // Set default values if there's an error
+                document.getElementById('totalInterns').textContent = '0';
+                document.getElementById('totalRewards').textContent = '0';
+                document.getElementById('totalDonations').textContent = '₹0';
+                document.getElementById('lastUpdated').textContent = 'Error loading data';
+            }
+        }
+
+        // Add activity to log
+        function addActivity(message) {
+            const activity = {
+                message: message,
+                timestamp: new Date().toISOString(),
+                user: currentUser.name
+            };
+            
+            activityLog.unshift(activity);
+            if (activityLog.length > 10) {
+                activityLog = activityLog.slice(0, 10);
+            }
+            
+            renderActivityLog();
+        }
+
+        // Render activity log
+        function renderActivityLog() {
+            const activityList = document.getElementById('activityList');
+            
+            activityList.innerHTML = activityLog.map(activity => `
+                <div class="activity-item">
+                    <i class="fas fa-info-circle"></i>
+                    <span>${activity.message}</span>
+                    <small>${new Date(activity.timestamp).toLocaleString()}</small>
+                </div>
+            `).join('');
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        // Utility functions
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html> 
